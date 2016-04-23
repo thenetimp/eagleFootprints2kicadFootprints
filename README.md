@@ -1,0 +1,1 @@
+This is a script for ripping footprints out of libraries.  Currently it only works on through hole components, but I will work on making smd components work as well.
