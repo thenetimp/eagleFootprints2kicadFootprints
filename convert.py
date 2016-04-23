@@ -19,14 +19,14 @@ def processPackage(package):
     
     for child in package:
        if child.tag == "text":
-           print(child.tag, child.attrib)
+           processText(packageName, child);
     
-    writeToFootprintFile(packageName, "  (fp_text reference Q? (at 0 0) (layer F.SilkS)\n")
-    writeToFootprintFile(packageName, "   (effects (font (size 0.8 0.8) (thickness 0.15)))\n")
-    writeToFootprintFile(packageName, "  )\n")
-    writeToFootprintFile(packageName, "  (fp_text value " + packageName + " (at 0 0) (layer F.Fab) hide\n")
-    writeToFootprintFile(packageName, "   (effects (font (size 0.8 0.8) (thickness 0.15)))\n")
-    writeToFootprintFile(packageName, "  )\n")
+    # writeToFootprintFile(packageName, "  (fp_text reference Q? (at 0 0) (layer F.SilkS)\n")
+    # writeToFootprintFile(packageName, "   (effects (font (size 0.8 0.8) (thickness 0.15)))\n")
+    # writeToFootprintFile(packageName, "  )\n")
+    # writeToFootprintFile(packageName, "  (fp_text value " + packageName + " (at 0 0) (layer F.Fab) hide\n")
+    # writeToFootprintFile(packageName, "   (effects (font (size 0.8 0.8) (thickness 0.15)))\n")
+    # writeToFootprintFile(packageName, "  )\n")
 
     for child in package:
         if child.tag == "wire":
@@ -46,6 +46,38 @@ def processPackage(package):
     writeToFootprintFile(packageName, "    (rotate (xyz 0 0 0))\n")
     writeToFootprintFile(packageName, "  )\n")
     writeToFootprintFile(packageName, ")\n")
+    return
+
+def processText(packageName, text):
+
+    x = text.attrib.get('x')
+    y = text.attrib.get('y')
+    rotation = text.attrib.get('rot');
+    layer = text.attrib.get('layer');
+    textValue = "";
+    hide = "";
+
+    if text.text == ">NAME":
+        textValue = "value " + packageName
+        layer = "F.Fab"
+        hide="hide" 
+         
+    if text.text == ">VALUE":
+        textValue = "reference REF**"
+        layer = "F.SilkS" 
+        hide = ""
+        
+    if rotation == "R90":
+        rotation = " 90"
+        print ("Rotating 90 degress...\n")
+    else:
+        rotation = ""    
+        print ("No Rotation required...\n")
+        
+
+    writeToFootprintFile(packageName, "  (fp_text " + textValue + " (at " + x + " " + y + "" + rotation + ") (layer " + layer + ") " + hide +"\n")
+    writeToFootprintFile(packageName, "   (effects (font (size 0.8 0.8) (thickness 0.15)))\n")
+    writeToFootprintFile(packageName, "  )\n")
     return
 
 def processWire(packageName, wire):
@@ -75,7 +107,8 @@ def processPad(packageName, pad):
     writeToFootprintFile(packageName, "  (pad " + name + " thru_hole circle (at " + x + " " + y + ") (size " + str(xSize) + " " + str(ySize) +") (drill " + drill + ") (layers *.Cu *.Mask F.SilkS))\n")
     return;
 
-tree = ET.parse('agilent-technologies.lbr')
+
+tree = ET.parse('triac.lbr')
 root = tree.getroot()
 
 for child in root[0][3][1]:
