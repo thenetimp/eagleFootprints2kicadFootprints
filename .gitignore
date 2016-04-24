@@ -1,4 +1,4 @@
 TO-18.kicad_mod
-TestPackage.pretty/
-agilent-technologies.lbr
 country_data.xml
+TestPackage.pretty/
+*.lbr
