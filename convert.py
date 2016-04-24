@@ -113,5 +113,3 @@ root = tree.getroot()
 
 for child in root[0][3][1]:
     parseChildParameter(child)
-    quit()
-
