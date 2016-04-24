@@ -5,8 +5,12 @@ Basic Usage:
     
   -i <inputfile>:  The eagle library that you'd like convert footprints for.
   
+  
+  The following parameters are optional
+  
   -o <outputDirectory>: The name of the directory that you want to put the footprint files in.  
-                   This should be a kicad footprint library
+                   This should be a kicad footprint library.  If this is left undefined footprints 
+                   will be stored in a directory named "Output.pretty". 
                    
   -t <target-module-name>:  If you only want a specific module from a library pass it with this argument.
   

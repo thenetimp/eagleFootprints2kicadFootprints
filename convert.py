@@ -11,6 +11,10 @@ def main():
     # Get the options passed into the commandline    
     getOptions(sys.argv[1:])
     
+    if(inputFile == ''):
+        print("Input library has not been defined")
+        sys.exit()
+        
     # Prepare the output directory
     prepareDirectory(outputDir)
 
@@ -175,7 +179,7 @@ def prepareDirectory(directory):
 
 # Create global variables
 inputFile = ''
-outputDir = './Ouput.pretty'
+outputDir = './Output.pretty'
 targetModule = ''
 overwrite = False
 
