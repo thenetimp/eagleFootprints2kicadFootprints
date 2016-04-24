@@ -1,4 +1,4 @@
 TO-18.kicad_mod
 country_data.xml
-TestPackage.pretty/
+*.pretty
 *.lbr
