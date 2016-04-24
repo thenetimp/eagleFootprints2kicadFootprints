@@ -1,54 +1,88 @@
 #!/usr/local/bin/python
 
-import xml.etree.ElementTree as ET
+import sys, getopt, os, xml.etree.ElementTree as ET
 
-def writeToFootprintFile(package, dataLine):
-    f = open("TestPackage.pretty/" + package + ".kicad_mod", "a+")
+def main():
+    global inputFile
+    global outputDir
+    global targetModule
+    global overwrite
+
+    # Get the options passed into the commandline    
+    getOptions(sys.argv[1:])
+    
+    # Prepare the output directory
+    prepareDirectory(outputDir)
+
+    # Validate Input file
+    if not (os.path.isfile(inputFile) and os.access(inputFile, os.R_OK)):
+        print "Input library is either missing or is not readable"
+        sys.exit();
+
+    # Read the XML input
+    tree = ET.parse(inputFile)
+    root = tree.getroot()
+
+    # Run through the footprints
+    for child in root[0][3][1]:
+        parseChildParameter(child)    
+    return;
+
+# Write to the output file.
+def writeToFootprintFile(packageFile, dataLine):
+    f = open(packageFile, "a+")
     f.write(dataLine)
     return
 
+# Parse the child parameters to find the packages
 def parseChildParameter(child):
     if child.tag == "package":
         processPackage(child);
     return
 
 def processPackage(package):
+    global overwrite, targetModule
+    
     packageName = package.attrib.get('name')
-    
-    writeToFootprintFile(packageName, "(module REF** (layer F.Cu) (tedit 55E4F891)\n")
-    
-    for child in package:
-       if child.tag == "text":
-           processText(packageName, child);
-    
-    # writeToFootprintFile(packageName, "  (fp_text reference Q? (at 0 0) (layer F.SilkS)\n")
-    # writeToFootprintFile(packageName, "   (effects (font (size 0.8 0.8) (thickness 0.15)))\n")
-    # writeToFootprintFile(packageName, "  )\n")
-    # writeToFootprintFile(packageName, "  (fp_text value " + packageName + " (at 0 0) (layer F.Fab) hide\n")
-    # writeToFootprintFile(packageName, "   (effects (font (size 0.8 0.8) (thickness 0.15)))\n")
-    # writeToFootprintFile(packageName, "  )\n")
+    packageFile = outputDir + "/" + packageName + ".kicad_mod"
 
-    for child in package:
-        if child.tag == "wire":
-            processWire(packageName, child);
-        if child.tag == "pad":
-            processPad(packageName, child);
-#        if child.tag == "smd":
-#            print(child.tag, child.attrib)
-#        if child.tag == "rectangle":
-#            print(child.tag, child.attrib)
-#        if child.tag == "circle":
-#            print(child.tag, child.attrib)
+    if (targetModule == '' or targetModule == packageName):
 
-    writeToFootprintFile(packageName, "  (model to/to18.wrl\n")
-    writeToFootprintFile(packageName, "    (at (xyz 0 0 0))\n")
-    writeToFootprintFile(packageName, "    (scale (xyz 1 1 1))\n")
-    writeToFootprintFile(packageName, "    (rotate (xyz 0 0 0))\n")
-    writeToFootprintFile(packageName, "  )\n")
-    writeToFootprintFile(packageName, ")\n")
+        # If the file exists and overwrite is specified then we delete the file    
+        if (os.path.isfile(packageFile) and overwrite):
+            os.remove(packageFile)
+
+        elif (os.path.isfile(packageFile) and not overwrite):
+            print("Footprint for " + packageName + " exists, skipping...")
+            return
+        
+        writeToFootprintFile(packageFile, "(module REF** (layer F.Cu) (tedit 55E4F891)\n")
+
+        for child in package:
+           if child.tag == "text":
+               processText(packageName, packageFile, child);
+
+        for child in package:
+            if child.tag == "wire":
+                processWire(packageName, packageFile, child);
+            if child.tag == "pad":
+                processPad(packageName,  packageFile,child);
+           # if child.tag == "smd":
+           #     print(child.tag, child.attrib)
+           # if child.tag == "rectangle":
+           #     print(child.tag, child.attrib)
+           # if child.tag == "circle":
+           #     print(child.tag, child.attrib)
+
+        # writeToFootprintFile(packageName, "  (model to/to18.wrl\n")
+        # writeToFootprintFile(packageName, "    (at (xyz 0 0 0))\n")
+        # writeToFootprintFile(packageName, "    (scale (xyz 1 1 1))\n")
+        # writeToFootprintFile(packageName, "    (rotate (xyz 0 0 0))\n")
+        # writeToFootprintFile(packageName, "  )\n")
+        # writeToFootprintFile(packageName, ")\n")
     return
 
-def processText(packageName, text):
+def processText(packageName, packageFile, text):
 
     x = text.attrib.get('x')
     y = text.attrib.get('y')
@@ -75,12 +109,12 @@ def processText(packageName, text):
         print ("No Rotation required...\n")
         
 
-    writeToFootprintFile(packageName, "  (fp_text " + textValue + " (at " + x + " " + y + "" + rotation + ") (layer " + layer + ") " + hide +"\n")
-    writeToFootprintFile(packageName, "   (effects (font (size 0.8 0.8) (thickness 0.15)))\n")
-    writeToFootprintFile(packageName, "  )\n")
+    writeToFootprintFile(packageFile, "  (fp_text " + textValue + " (at " + x + " " + y + "" + rotation + ") (layer " + layer + ") " + hide +"\n")
+    writeToFootprintFile(packageFile, "   (effects (font (size 0.8 0.8) (thickness 0.15)))\n")
+    writeToFootprintFile(packageFile, "  )\n")
     return
 
-def processWire(packageName, wire):
+def processWire(packageName, packageFile, wire):
     width = wire.attrib.get('width');
     layer = wire.attrib.get('layer');
     x1 = wire.attrib.get('x1');
@@ -90,10 +124,11 @@ def processWire(packageName, wire):
     curve = wire.attrib.get('curve');
     # layer = getMappedLayer(wire.attrib.get('layer'))
     
-    writeToFootprintFile(packageName, "  (fp_line (start "+x1+" "+y1+") (end "+x2+" "+y2+") (layer F.SilkS) (width " + width + "))\n")
+    writeToFootprintFile(packageFile, "  (fp_line (start "+x1+" "+y1+") (end "+x2+" "+y2+") (layer F.SilkS) (width " + width + "))\n")
     return;
 
-def processPad(packageName, pad):
+# Create pads for 
+def processPad(packageName, packageFile, pad):
     name = pad.attrib.get('name');
     shape = pad.attrib.get('shape');
     drill = pad.attrib.get('drill');
@@ -104,12 +139,45 @@ def processPad(packageName, pad):
     y = pad.attrib.get('y');
     rotation = pad.attrib.get('rot');
     print("Write pad: " + name)
-    writeToFootprintFile(packageName, "  (pad " + name + " thru_hole circle (at " + x + " " + y + ") (size " + str(xSize) + " " + str(ySize) +") (drill " + drill + ") (layers *.Cu *.Mask F.SilkS))\n")
+    writeToFootprintFile(packageFile, "  (pad " + name + " thru_hole circle (at " + x + " " + y + ") (size " + str(xSize) + " " + str(ySize) +") (drill " + drill + ") (layers *.Cu *.Mask F.SilkS))\n")
     return;
 
+# Get the commandline options
+def getOptions(argv):
+    global inputFile, outputDir, targetModule, overwrite
 
-tree = ET.parse('triac.lbr')
-root = tree.getroot()
+    # Get the options from the commandline
+    try:
+      opts, args = getopt.getopt(argv,"hi:o:t:x:",["ifile=","oDir=","targetMod=","overwrite="])
+    except getopt.GetoptError:
+      print 'test.py -i <inputfile> -o <outputDirectory> [ -t <target-module-name>, -x]'
+      sys.exit(2)
 
-for child in root[0][3][1]:
-    parseChildParameter(child)
+    for opt, arg in opts:
+      if opt == '-h':
+         print 'test.py -i <inputFile> -o <outputDirectory> [ -t <target-module-name>, -x ]'
+         sys.exit()
+      elif opt in ("-i", "--ifile"):
+         inputFile = arg
+      elif opt in ("-o", "--oDir"):
+         outputDir = arg
+      elif opt in ("-t", "--targetMod"):
+         targetModule = arg
+      elif opt in ("-x", "--overwrite"):
+         overwrite = True
+    return
+
+def prepareDirectory(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)    
+    return
+
+
+# Create global variables
+inputFile = ''
+outputDir = './Ouput.pretty'
+targetModule = ''
+overwrite = False
+
+# Execute the script
+main();
