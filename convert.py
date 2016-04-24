@@ -150,12 +150,12 @@ def getOptions(argv):
     try:
       opts, args = getopt.getopt(argv,"hi:o:t:x:",["ifile=","oDir=","targetMod=","overwrite="])
     except getopt.GetoptError:
-      print 'test.py -i <inputfile> -o <outputDirectory> [ -t <target-module-name>, -x]'
+      print 'convert.py -i <inputfile> -o <outputDirectory> [ -t <target-module-name>, -x true ]'
       sys.exit(2)
 
     for opt, arg in opts:
       if opt == '-h':
-         print 'test.py -i <inputFile> -o <outputDirectory> [ -t <target-module-name>, -x ]'
+         print 'convert.py -i <inputFile> -o <outputDirectory> [ -t <target-module-name>, -x true ]'
          sys.exit()
       elif opt in ("-i", "--ifile"):
          inputFile = arg
